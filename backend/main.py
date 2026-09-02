@@ -89,7 +89,7 @@ def generate_step2(user_answer: str, scenario: dict):
         model="gemini-3.6-flash",
         contents=prompt,
         config={
-            "system_instruction": SYSTEM_PROMPT
+            "response_mime_type": "application/json"
         }
     )
 
@@ -150,6 +150,69 @@ def generate_next_scenario(previous_scenario: dict, next_scenario: dict):
     )
 
     return response.text
+
+
+def generate_profile():
+    if not scenario_answers:
+        raise ValueError("분석할 시나리오 답변이 없습니다.")
+
+    answers_text = "\n".join(
+        f'CASE {answer["scenario_id"]} STEP {answer["step"]}: {answer["answer"]}'
+        for answer in scenario_answers
+    )
+
+    prompt = f"""
+사용자가 좀비 아포칼립스 생존 시나리오에서 한 행동들을 분석하여
+Survivor Profile을 생성하라.
+
+[사용자 행동 기록]
+{answers_text}
+
+다음 6개의 성향을 0~100 점수로 평가하라.
+
+- judgment: 판단력
+- caution: 신중함
+- risk_tolerance: 위험 감수 성향
+- cooperation: 협동성
+- empathy: 공감성
+- action: 행동력
+
+분석 규칙:
+- 사용자의 실제 답변에 근거해서 평가한다.
+- 단순히 특정 행동 하나만 보고 판단하지 않는다.
+- 전체 시나리오에서 반복적으로 나타난 행동 패턴을 우선한다.
+- 위험을 피했다고 무조건 판단력이 높거나 낮다고 평가하지 않는다.
+- 타인을 도왔다고 무조건 공감성이 높다고 판단하지 않는다.
+- 상황과 이유를 함께 고려한다.
+- 점수는 0~100 사이의 정수로 작성한다.
+- survivor_type은 사용자의 가장 특징적인 생존 성향을 짧은 한국어 표현으로 작성한다.
+- recommended_role은 좀비 생존 집단에서 어울리는 역할을 작성한다.
+- strength와 weakness는 각각 한 문장으로 작성한다.
+
+반드시 아래 JSON 형식으로만 응답하라.
+Markdown 코드 블록은 사용하지 않는다.
+
+{{
+  "survivor_type": "신중한 전략가",
+  "judgment": 88,
+  "caution": 92,
+  "risk_tolerance": 31,
+  "cooperation": 74,
+  "empathy": 70,
+  "action": 55,
+  "recommended_role": "전략 및 물자 관리",
+  "strength": "위험 요소를 충분히 분석한 뒤 행동한다.",
+  "weakness": "즉각적인 결단이 필요한 상황에서는 대응이 늦어질 수 있다."
+}}
+"""
+
+    response = client.models.generate_content(
+        model="gemini-3.6-flash",
+        contents=prompt
+    )
+
+    return response.text
+
 
 def get_mock_next_scenario(next_scenario: dict):
     return next_scenario["step1"]["core_event"]
@@ -378,3 +441,40 @@ def get_answers():
     return {
         "answers": scenario_answers
     }
+
+@app.get("/profile")
+def get_profile():
+    try:
+        if USE_MOCK:
+            return {
+                "survivor_type": "신중한 전략가",
+                "judgment": 85,
+                "caution": 90,
+                "risk_tolerance": 35,
+                "cooperation": 70,
+                "empathy": 75,
+                "action": 60,
+                "recommended_role": "전략 및 물자 관리",
+                "strength": "위험 요소를 충분히 분석한 뒤 행동한다.",
+                "weakness": "즉각적인 결단이 필요한 상황에서는 대응이 늦어질 수 있다.",
+                "mode": "mock"
+            }
+
+        profile_text = generate_profile()
+        profile = json.loads(profile_text)
+
+        profile["mode"] = "gemini"
+
+        return profile
+
+    except json.JSONDecodeError:
+        raise HTTPException(
+            status_code=500,
+            detail="Gemini의 프로필 응답을 JSON으로 변환하지 못했습니다."
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
