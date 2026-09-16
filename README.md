@@ -10,6 +10,7 @@ Gemini가 사용자의 행동을 이해해 다음 상황을 자연스럽게 전�
 
 <img width="1917" height="821" alt="image" src="https://github.com/user-attachments/assets/becc2875-7576-48e0-84d8-9b5ed14bde9f" />
 <img width="1918" height="825" alt="image" src="https://github.com/user-attachments/assets/a1013344-4c92-4458-a4cc-528e3ddc347c" />
+<img width="1915" height="892" alt="image" src="https://github.com/user-attachments/assets/68ab90b0-357a-4683-8c6c-a5ca65037b7f" />
 <img width="1868" height="825" alt="image" src="https://github.com/user-attachments/assets/398545b0-94c0-45d3-8b38-d6b5bf7c16c8" />
 
 ---
