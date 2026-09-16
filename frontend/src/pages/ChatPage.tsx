@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ChatMessage from "../components/ChatMessage";
 import ChatInput from "../components/ChatInput";
 import { sendChat, getProfile } from "../services/api";
@@ -26,6 +26,18 @@ function ChatPage({
 
     const [isLoading, setIsLoading] = useState(false);
     const [isComplete, setIsComplete] = useState(false);
+    const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "end",
+        });
+    }, [messages, isLoading]);
+
+    const [currentScenario, setCurrentScenario] = useState(
+        firstScenario.scenario_id ?? 1
+    );
 
     const handleSend = async (message: string) => {
         try {
@@ -40,6 +52,10 @@ function ChatPage({
             ]);
 
             const response = await sendChat(message);
+
+            if (response.scenario_id) {
+                setCurrentScenario(response.scenario_id);
+            }
 
             if (response.step === "complete") {
                 setIsComplete(true);
@@ -59,7 +75,7 @@ function ChatPage({
             setIsLoading(false);
         }
     };
-    
+
     const handleViewProfile = async () => {
         try {
             setIsLoading(true);
@@ -76,10 +92,25 @@ function ChatPage({
     };
 
     return (
-        <main>
-            <h1>Zombie Survival Test</h1>
+        <main className="chat-page">
+            <header className="chat-header">
+                <div>
+                    <span className="chat-eyebrow">SURVIVAL SESSION</span>
+                    <h1>ZOMBIE SURVIVAL TEST</h1>
+                </div>
 
-            <section>
+                <div className="scenario-progress">
+                    <span>CASE</span>
+                    <strong>
+                        {String(currentScenario).padStart(2, "0")}
+                        <small> / 05</small>
+                    </strong>
+                </div>
+            </header>
+
+            <div className="chat-divider" />
+
+            <section className="chat-messages">
                 {messages.map((message, index) => (
                     <ChatMessage
                         key={index}
@@ -87,21 +118,40 @@ function ChatPage({
                         content={message.content}
                     />
                 ))}
+
+                {isLoading && !isComplete && (
+                    <div className="gm-loading">
+                        <span className="loading-dot" />
+                        GM이 상황을 판단하고 있습니다...
+                    </div>
+                )}
+                <div ref={messagesEndRef} />
+                
             </section>
 
-            {isLoading && <p>GM이 상황을 판단하고 있습니다...</p>}
+            <div className="chat-bottom">
+                {isComplete ? (
+                    <div className="complete-area">
+                        <span>SURVIVAL TEST COMPLETE</span>
 
-            {isComplete ? (
-                <button
-                    type="button"
-                    onClick={handleViewProfile}
-                    disabled={isLoading}
-                >
-                    {isLoading ? "결과 분석 중..." : "나의 생존 결과 보기"}
-                </button>
-            ) : (
-                <ChatInput onSend={handleSend} disabled={isLoading} />
-            )}
+                        <button
+                            className="result-button"
+                            type="button"
+                            onClick={handleViewProfile}
+                            disabled={isLoading}
+                        >
+                            {isLoading
+                                ? "생존 데이터 분석 중..."
+                                : "나의 생존 결과 보기 →"}
+                        </button>
+                    </div>
+                ) : (
+                    <ChatInput
+                        onSend={handleSend}
+                        disabled={isLoading}
+                    />
+                )}
+            </div>
         </main>
     );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -7,6 +7,14 @@ interface ChatInputProps {
 
 function ChatInput({ onSend, disabled = false }: ChatInputProps) {
   const [message, setMessage] = useState("");
+
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    if (!disabled) {
+      textareaRef.current?.focus();
+    }
+  }, [disabled]);
 
   const handleSubmit = () => {
     const trimmedMessage = message.trim();
@@ -27,21 +35,27 @@ function ChatInput({ onSend, disabled = false }: ChatInputProps) {
   };
 
   return (
-    <div>
+    <div className="chat-input-wrapper">
       <textarea
+        ref={textareaRef}
+        className="chat-input"
         value={message}
-        onChange={(event) => setMessage(event.target.value)}
+        onChange={(event) =>
+          setMessage(event.target.value)
+        }
         onKeyDown={handleKeyDown}
-        placeholder="어떻게 행동하시겠습니까?"
+        placeholder="이 상황에서 어떻게 행동하시겠습니까?"
         disabled={disabled}
       />
 
       <button
+        className="send-button"
         type="button"
         onClick={handleSubmit}
         disabled={disabled || !message.trim()}
+        aria-label="메시지 전송"
       >
-        전송
+        →
       </button>
     </div>
   );
