@@ -13,9 +13,19 @@ function App() {
 
   const [profile, setProfile] =
     useState<SurvivorProfile | null>(null);
+  
+  const handleRestart = () => {
+    setProfile(null);
+    setFirstScenario(null);
+  };
 
   if (profile) {
-    return <ProfilePage profile={profile} />;
+    return (
+      <ProfilePage
+        profile={profile}
+        onRestart={handleRestart}
+      />
+    );
   }
 
   if (firstScenario) {
